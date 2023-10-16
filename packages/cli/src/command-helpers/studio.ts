@@ -1,5 +1,6 @@
 export const allowedStudioNetworks = [
   'mainnet',
+  'mantle',
   'rinkeby',
   'goerli',
   'gnosis',

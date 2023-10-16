@@ -78,6 +78,7 @@ export default class Protocol {
       arweave: ['arweave-mainnet'],
       ethereum: [
         'mainnet',
+        'mantle',
         'rinkeby',
         'goerli',
         'poa-core',

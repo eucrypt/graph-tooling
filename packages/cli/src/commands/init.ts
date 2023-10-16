@@ -1,23 +1,20 @@
 import fs from 'fs';
 import os from 'os';
+import {safeLoad} from 'js-yaml';
 import path from 'path';
-import { filesystem, prompt, system } from 'gluegun';
-import { Args, Command, Flags, ux } from '@oclif/core';
-import {
-  loadAbiFromBlockScout,
-  loadAbiFromEtherscan,
-  loadStartBlockForContract,
-} from '../command-helpers/abi';
-import { initNetworksConfig } from '../command-helpers/network';
-import { chooseNodeUrl } from '../command-helpers/node';
-import { generateScaffold, writeScaffold } from '../command-helpers/scaffold';
-import { withSpinner } from '../command-helpers/spinner';
-import { validateStudioNetwork } from '../command-helpers/studio';
-import { getSubgraphBasename, validateSubgraphName } from '../command-helpers/subgraph';
-import Protocol, { ProtocolName } from '../protocols';
+import {filesystem, prompt, system} from 'gluegun';
+import {Command, ux} from '@oclif/core';
+import {loadAbiFromBlockScout, loadAbiFromEtherscan, loadStartBlockForContract,} from '../command-helpers/abi';
+import {initNetworksConfig} from '../command-helpers/network';
+import {chooseNodeUrl} from '../command-helpers/node';
+import {generateScaffold, writeScaffold} from '../command-helpers/scaffold';
+import {withSpinner} from '../command-helpers/spinner';
+import {validateStudioNetwork} from '../command-helpers/studio';
+import {getSubgraphBasename, validateSubgraphName} from '../command-helpers/subgraph';
+import Protocol, {ProtocolName} from '../protocols';
 import EthereumABI from '../protocols/ethereum/abi';
-import { abiEvents } from '../scaffold/schema';
-import { validateContract } from '../validation';
+import {abiEvents} from '../scaffold/schema';
+import {validateContract} from '../validation';
 import AddCommand from './add';
 
 const protocolChoices = Array.from(Protocol.availableProtocols().keys());
@@ -28,109 +25,33 @@ const DEFAULT_EXAMPLE_SUBGRAPH = 'ethereum-gravatar';
 export default class InitCommand extends Command {
   static description = 'Creates a new subgraph with basic scaffolding.';
 
-  static args = {
-    subgraphName: Args.string(),
-    directory: Args.string(),
-  };
-
-  static flags = {
-    help: Flags.help({
-      char: 'h',
-    }),
-
-    protocol: Flags.string({
-      options: protocolChoices,
-    }),
-    product: Flags.string({
-      summary: 'Selects the product for which to initialize.',
-      options: ['subgraph-studio', 'hosted-service'],
-    }),
-    studio: Flags.boolean({
-      summary: 'Shortcut for "--product subgraph-studio".',
-      exclusive: ['product'],
-    }),
-    node: Flags.string({
-      summary: 'Graph node for which to initialize.',
-      char: 'g',
-    }),
-    'allow-simple-name': Flags.boolean({
-      description: 'Use a subgraph name without a prefix.',
-      default: false,
-    }),
-
-    'from-contract': Flags.string({
-      description: 'Creates a scaffold based on an existing contract.',
-      exclusive: ['from-example'],
-    }),
-    'from-example': Flags.string({
-      description: 'Creates a scaffold based on an example subgraph.',
-      // TODO: using a default sets the value and therefore requires not to have --from-contract
-      // default: 'Contract',
-      exclusive: ['from-contract'],
-    }),
-
-    'contract-name': Flags.string({
-      helpGroup: 'Scaffold from contract',
-      description: 'Name of the contract.',
-      dependsOn: ['from-contract'],
-    }),
-    'index-events': Flags.boolean({
-      helpGroup: 'Scaffold from contract',
-      description: 'Index contract events as entities.',
-      dependsOn: ['from-contract'],
-    }),
-    'skip-install': Flags.boolean({
-      summary: 'Skip installing dependencies.',
-      default: false,
-    }),
-    'start-block': Flags.string({
-      helpGroup: 'Scaffold from contract',
-      description: 'Block number to start indexing from.',
-      // TODO: using a default sets the value and therefore requires --from-contract
-      // default: '0',
-      dependsOn: ['from-contract'],
-    }),
-
-    abi: Flags.string({
-      summary: 'Path to the contract ABI',
-      // TODO: using a default sets the value and therefore requires --from-contract
-      // default: '*Download from Etherscan*',
-      dependsOn: ['from-contract'],
-    }),
-    spkg: Flags.string({
-      summary: 'Path to the SPKG file',
-    }),
-    network: Flags.string({
-      summary: 'Network the contract is deployed to.',
-      dependsOn: ['from-contract'],
-      options: [
-        ...availableNetworks.get('ethereum')!,
-        ...availableNetworks.get('near')!,
-        ...availableNetworks.get('cosmos')!,
-      ],
-    }),
-  };
 
   async run() {
-    const {
-      args: { subgraphName, directory },
-      flags: {
-        protocol,
-        product,
-        studio,
-        node: nodeFlag,
-        'allow-simple-name': allowSimpleNameFlag,
-        'from-contract': fromContract,
-        'contract-name': contractName,
-        'from-example': fromExample,
-        'index-events': indexEvents,
-        'skip-install': skipInstall,
-        network,
-        abi: abiPath,
-        'start-block': startBlock,
-        spkg: spkgPath,
-      },
-    } = await this.parse(InitCommand);
+    await this.parse(InitCommand);
+
+    const subgraphData = extractSubgraphData("config.yml");
+    if (!subgraphData) {
+      this.error('failed to parse config file', {
+        exit: 1,
+      });
+      // return
+    }
+    const subgraphName = subgraphData?.subgraphSlug
+    const product = "subgraph-studio"
+    const directory = subgraphData?.directory
+    const protocol = subgraphData?.protocol
+    const studio = true
+    const nodeFlag = undefined
+    const allowSimpleNameFlag = true
+    const fromContract = subgraphData?.contractAddress
+    const contractName = subgraphData?.contractName
+    const fromExample = undefined
+    const skipInstall = false
+    const indexEvents = true
+    const network = subgraphData?.network
+    const abiPath = subgraphData?.abiPath
+    const startBlock = subgraphData?.startBlock
+    const spkgPath = undefined
 
     let { node, allowSimpleName } = chooseNodeUrl({
       product,
@@ -1233,3 +1154,28 @@ async function addAnotherContract(
 
   return addContractConfirmation;
 }
+// Define the SubgraphData interface
+interface SubgraphData {
+  contractAddress: string;
+  protocol: string;
+  subgraphSlug: string;
+  directory: string;
+  network: string;
+  abiPath: string;
+  startBlock: string;
+  contractName: string;
+  indexEvents: boolean;
+}
+
+// Define a function to extract data from the YAML file
+function extractSubgraphData(filePath: string): SubgraphData | null {
+  try {
+    const yamlContent = fs.readFileSync(filePath, 'utf8');
+    return  safeLoad(yamlContent) as SubgraphData;
+
+  } catch (error) {
+    // console.error('Error reading or parsing the YAML file:', error);
+    return null;
+  }
+}
+

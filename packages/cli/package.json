@@ -1,13 +1,12 @@
 {
-  "name": "@graphprotocol/graph-cli",
-  "version": "0.59.0",
+  "name": "pujith-graph",
+  "version": "1.0.12",
   "description": "CLI for building for and deploying to The Graph",
-  "license": "(Apache-2.0 OR MIT)",
   "engines": {
     "node": ">=14"
   },
   "bin": {
-    "graph": "bin/run"
+    "unmarshalgraph": "bin/run"
   },
   "main": "dist/index.js",
   "files": [
@@ -25,7 +24,10 @@
     "test:add": "jest tests/cli/add.test.ts --verbose",
     "test:init": "jest tests/cli/init.test.ts --verbose",
     "test:validation": "jest tests/cli/validation.test.ts --verbose",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "patch": "npm version patch",
+    "publish": "npm publish",
+    "run-publish": "npm run build && npm run patch && npm run publish"
   },
   "dependencies": {
     "@float-capital/float-subgraph-uncrashable": "^0.0.0-alpha.4",
@@ -76,7 +78,7 @@
     "access": "public"
   },
   "oclif": {
-    "bin": "graph",
+    "bin": "unmarshalgraph",
     "commands": "./dist/commands",
     "additionalHelpFlags": [
       "-h"

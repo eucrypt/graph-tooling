@@ -80,4 +80,5 @@ oclif.manifest.json
 # Oclif pack
 tmp
 
+.idea/
 *.wasm

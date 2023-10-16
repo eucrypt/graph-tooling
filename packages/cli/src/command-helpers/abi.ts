@@ -204,6 +204,8 @@ const getEtherscanLikeAPIUrl = (network: string) => {
       return `https://api-sepolia.etherscan.io/api`;
     case 'scroll-sepolia':
       return `https://sepolia-blockscout.scroll.io/api`;
+    case 'mantle':
+      return `https://explorer.mantle.xyz/api`;
     default:
       return `https://api-${network}.etherscan.io/api`;
   }
@@ -280,6 +282,8 @@ const getPublicRPCEndpoint = (network: string) => {
       return 'https://rpc.ankr.com/eth_sepolia';
     case 'scroll-sepolia':
       return 'https://rpc.ankr.com/scroll_sepolia_testnet';
+    case 'mantle':
+      return 'https://explorer.mantle.xyz/api/eth-rpc';
     default:
       throw new Error(`Unknown network: ${network}`);
   }

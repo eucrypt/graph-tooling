@@ -42,5 +42,6 @@
     "patchedDependencies": {
       "oclif@3.8.1": "patches/oclif@3.8.1.patch"
     }
-  }
+  },
+  "version": "0.0.1"
 }
